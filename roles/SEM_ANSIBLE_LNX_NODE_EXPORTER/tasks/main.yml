@@ -1,21 +1,17 @@
 - block:
   - name: Create /opt/node_exporter directory
     file:
-      path: /opt/node_exporter
+      path: /opt/prometheus-node_exporter
       state: directory   
 
   - name: Copy node_exporter binary
     ansible.builtin.copy:
       src: files/node_exporter/node_exporter
-      dest: /opt/node_exporter
+      dest: /opt/prometheus-node_exporter
       mode: '0755'
       owner: root
       group: root
 
-  - name: Install node_exporter RPM
-    ansible.builtin.rpm_key:
-      key: "https://keyserver.ubuntu.com/pks/lookup?op=get&search=0x8F3B8CCB48EEA1488DD82C58A6170C2CA6162C32"
-    
   - name: Create prometheus-node_exporter.service file
     copy:
       content: |
@@ -37,6 +33,13 @@
       owner: root
       group: root
       mode: '0644'
+
+- name: Create symbolic link for node_exporter
+  ansible.builtin.file:
+    src: /opt/prometheus-node_exporter/node-exporter
+    dest: /usr/local/bin/node_exporter
+    state: link
+    force: yes
 
   - name: Add port 9100 to firewall
     ansible.builtin.firewalld:
