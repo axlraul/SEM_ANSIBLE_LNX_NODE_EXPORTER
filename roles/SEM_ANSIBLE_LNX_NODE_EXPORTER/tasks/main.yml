@@ -34,12 +34,12 @@
       group: root
       mode: '0644'
 
-- name: Create symbolic link for node_exporter
-  ansible.builtin.file:
-    src: /opt/prometheus-node_exporter/node-exporter
-    dest: /usr/local/bin/node_exporter
-    state: link
-    force: yes
+  - name: Create symbolic link for node_exporter
+    ansible.builtin.file:
+      src: /opt/prometheus-node_exporter/node-exporter
+      dest: /usr/local/bin/node_exporter
+      state: link
+      force: yes
 
   - name: Add port 9100 to firewall
     ansible.builtin.firewalld:
