@@ -1,0 +1,66 @@
+block:
+- name: Create /opt/node_exporter directory
+  file:
+    path: /opt/node_exporter
+    state: directory   
+
+- name: Copy node_exporter binary
+  ansible.builtin.copy:
+    src: files/node_exporter/node_exporter
+    dest: /opt/node_exporter
+    mode: '0755'
+    owner: root
+    group: root
+
+- name: Install node_exporter RPM
+  ansible.builtin.rpm_key:
+    key: "https://keyserver.ubuntu.com/pks/lookup?op=get&search=0x8F3B8CCB48EEA1488DD82C58A6170C2CA6162C32"
+  
+- name: Create prometheus-node_exporter.service file
+  copy:
+    content: |
+      [Unit]
+      Description=Prometheus Monitoring
+      Wants=network-online.target
+      After=network-online.target
+
+      [Service]
+      User=root
+      Restart=on-failure
+
+      # Location of the prometheus executable
+      ExecStart=/usr/local/bin/node_exporter
+
+      [Install]
+      WantedBy=multi-user.target
+    dest: "/etc/systemd/system/prometheus-node_exporter.service"
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: Add port 9100 to firewall
+  ansible.builtin.firewalld:
+    port: 9100/tcp
+    permanent: true
+    state: enabled
+
+- name: Restart firewalld
+  ansible.builtin.systemd:
+    name: firewalld
+    state: restarted
+
+- name: Disable SELinux permanently
+  ansible.builtin.selinux:
+    policy: targeted
+    state: disabled
+
+- name: Enable prometheus-node_exporter.service at startup
+  ansible.builtin.systemd:
+    name: prometheus-node_exporter
+    enabled: yes
+
+- name: Start prometheus-node_exporter.service
+  ansible.builtin.systemd:
+    name: prometheus-node_exporter
+    state: started
+when: ansible_distribution == 'CentOS' or ansible_distribution == 'Red Hat'
