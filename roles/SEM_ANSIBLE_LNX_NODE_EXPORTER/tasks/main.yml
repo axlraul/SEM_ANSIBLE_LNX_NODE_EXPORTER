@@ -55,7 +55,7 @@
 #      when: firewalld_register.changed == true
 
   - name: Add port 9100 to firewall
-    ansible.builtin.firewalld:
+    firewalld:
       port: 9100/tcp
       permanent: true
       state: enabled
@@ -64,7 +64,7 @@
   - meta: flush_handlers
 
   - name: Restart firewalld
-    ansible.builtin.systemd:
+    systemd:
       name: firewalld
       state: restarted
     listen: Restart Firewalld
