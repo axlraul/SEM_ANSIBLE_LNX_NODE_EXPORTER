@@ -41,16 +41,33 @@
       state: link
       force: yes
 
+#  - name: Add port 9100 to firewall
+#    ansible.builtin.firewalld:
+#      port: 9100/tcp
+#      permanent: true
+#      state: enabled
+#      register: firewalld_register
+#
+#  - name: Restart firewalld
+#    ansible.builtin.systemd:
+#      name: firewalld
+#      state: restarted
+#      when: firewalld_register.changed == true
+
   - name: Add port 9100 to firewall
     ansible.builtin.firewalld:
       port: 9100/tcp
       permanent: true
       state: enabled
+    notify: Restart Firewalld
+
+  - meta: flush_handlers
 
   - name: Restart firewalld
     ansible.builtin.systemd:
       name: firewalld
       state: restarted
+    listen: Restart Firewalld
 
   - name: Disable SELinux permanently
     ansible.builtin.selinux:
