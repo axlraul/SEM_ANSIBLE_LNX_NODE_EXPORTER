@@ -36,7 +36,7 @@
 
   - name: Create symbolic link for node_exporter
     ansible.builtin.file:
-      src: /opt/prometheus-node_exporter/node-exporter
+      src: /opt/prometheus-node_exporter/node_exporter
       dest: /usr/local/bin/node_exporter
       state: link
       force: yes
