@@ -1,88 +1,90 @@
-- block:
-  - name: Create /opt/node_exporter directory
-    file:
-      path: /opt/prometheus-node_exporter
-      state: directory   
+    - block:
+      - name: Create /opt/node_exporter directory
+        file:
+          path: /opt/prometheus-node_exporter
+          state: directory
 
-  - name: Copy node_exporter binary
-    ansible.builtin.copy:
-      src: files/node_exporter/node_exporter
-      dest: /opt/prometheus-node_exporter
-      mode: '0755'
-      owner: root
-      group: root
+      - name: Copy node_exporter binary
+        ansible.builtin.copy:
+          src: files/node_exporter/node_exporter
+          dest: /opt/prometheus-node_exporter
+          mode: '0755'
+          owner: root
+          group: root
 
-  - name: Create prometheus-node_exporter.service file
-    copy:
-      content: |
-        [Unit]
-        Description=Prometheus Monitoring
-        Wants=network-online.target
-        After=network-online.target
+      - name: Create prometheus-node_exporter.service file
+        copy:
+          content: |
+            [Unit]
+            Description=Prometheus Monitoring
+            Wants=network-online.target
+            After=network-online.target
 
-        [Service]
-        User=root
-        Restart=on-failure
+            [Service]
+            User=root
+            Restart=on-failure
 
-        # Location of the prometheus executable
-        ExecStart=/usr/local/bin/node_exporter
+            # Location of the prometheus executable
+            ExecStart=/usr/local/bin/node_exporter
 
-        [Install]
-        WantedBy=multi-user.target
-      dest: "/etc/systemd/system/prometheus-node_exporter.service"
-      owner: root
-      group: root
-      mode: '0644'
+            [Install]
+            WantedBy=multi-user.target
+          dest: "/etc/systemd/system/prometheus-node_exporter.service"
+          owner: root
+          group: root
+          mode: '0644'
 
-  - name: Create symbolic link for node_exporter
-    ansible.builtin.file:
-      src: /opt/prometheus-node_exporter/node_exporter
-      dest: /usr/local/bin/node_exporter
-      state: link
-      force: yes
+      - name: Create symbolic link for node_exporter
+        ansible.builtin.file:
+          src: /opt/prometheus-node_exporter/node_exporter
+          dest: /usr/local/bin/node_exporter
+          state: link
+          force: yes
 
-#  - name: Add port 9100 to firewall
-#    ansible.builtin.firewalld:
-#      port: 9100/tcp
-#      permanent: true
-#      state: enabled
-#      register: firewalld_register
-#
-#  - name: Restart firewalld
-#    ansible.builtin.systemd:
-#      name: firewalld
-#      state: restarted
-#      when: firewalld_register.changed == true
+    #  - name: Add port 9100 to firewall
+    #    ansible.builtin.firewalld:
+    #      port: 9100/tcp
+    #      permanent: true
+    #      state: enabled
+    #      register: firewalld_register
+    #
+    #  - name: Restart firewalld
+    #    ansible.builtin.systemd:
+    #      name: firewalld
+    #      state: restarted
+    #      when: firewalld_register.changed == true
 
-  - name: Add port 9100 to firewall
-    firewalld:
-      port: 9100/tcp
-      permanent: true
-      state: enabled
-    notify: 
-      - Restart Firewalld
+      - name: Add port 9100 to firewall
+        firewalld:
+          port: 9100/tcp
+          permanent: true
+          state: enabled
+        notify:
+          - Restart Firewalld
 
-  - name: Force all notified handlers to run at this point, not waiting for normal sync points
-    meta: flush_handlers
+#      - name: Force all notified handlers to run at this point, not waiting for normal sync points
+#        meta: flush_handlers
 
+
+      - name: Disable SELinux permanently
+        ansible.builtin.selinux:
+          policy: targeted
+          state: disabled
+
+      - name: Enable prometheus-node_exporter.service at startup
+        ansible.builtin.systemd:
+          name: prometheus-node_exporter
+          enabled: yes
+
+      - name: Start prometheus-node_exporter.service
+        ansible.builtin.systemd:
+          name: prometheus-node_exporter
+          state: started
+      when: ansible_distribution == 'CentOS' or ansible_distribution == 'Red Hat'
+
+handlers:
   - name: Restart firewalld
     systemd:
       name: firewalld
       state: restarted
     #listen: Restart Firewalld
-
-  - name: Disable SELinux permanently
-    ansible.builtin.selinux:
-      policy: targeted
-      state: disabled
-
-  - name: Enable prometheus-node_exporter.service at startup
-    ansible.builtin.systemd:
-      name: prometheus-node_exporter
-      enabled: yes
-
-  - name: Start prometheus-node_exporter.service
-    ansible.builtin.systemd:
-      name: prometheus-node_exporter
-      state: started
-  when: ansible_distribution == 'CentOS' or ansible_distribution == 'Red Hat'
