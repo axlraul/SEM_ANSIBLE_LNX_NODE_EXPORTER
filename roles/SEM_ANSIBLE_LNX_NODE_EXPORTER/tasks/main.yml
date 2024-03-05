@@ -82,9 +82,3 @@
           state: started
       when: ansible_distribution == 'CentOS' or ansible_distribution == 'Red Hat'
 
-handlers:
-  - name: Restart firewalld
-    systemd:
-      name: firewalld
-      state: restarted
-    #listen: Restart Firewalld
